@@ -128,6 +128,14 @@ function reportState() {
   const handButton = findButton(BUTTON_MATCHERS.hand);
   const captionsButton = findButton(BUTTON_MATCHERS.captions);
   const micOn = isCurrentlyOn(micButton);
+  // Sharing state is the presence of the "Stop presenting" control — the same signal
+  // toggleScreenShare() already uses to decide which direction to toggle. There's no
+  // on/off-labelled button to read like the other toggles have, so this is derived rather
+  // than parsed: visible stop-button means a share is live. Must use findButtonByPattern
+  // (not findButton) for the reason documented on toggleScreenShare — while actively
+  // sharing, that control has no aria-label attribute at all; its accessible name comes
+  // from aria-labelledby, so an [aria-label]-only search never sees it.
+  const sharing = !!findButtonByPattern(BUTTON_MATCHERS.stopSharing);
 
   try {
     api.runtime.sendMessage({
@@ -139,6 +147,7 @@ function reportState() {
       cameraOn: isCurrentlyOn(cameraButton),
       handRaised: handButton ? /lower hand/i.test(handButton.getAttribute('aria-label') || '') : null,
       captionsOn: isCurrentlyOn(captionsButton),
+      sharing,
     });
   } catch {
     // "Extension context invalidated" — this happens when the extension gets
@@ -358,7 +367,7 @@ pollIntervalId = setInterval(reportState, 4000);
 window.addEventListener('beforeunload', () => {
   clearInterval(pollIntervalId);
   try {
-    api.runtime.sendMessage({ type: 'state', inCall: false, micMuted: null, cameraOn: null, handRaised: null, captionsOn: null });
+    api.runtime.sendMessage({ type: 'state', inCall: false, micMuted: null, cameraOn: null, handRaised: null, captionsOn: null, sharing: false });
   } catch {
     // context may already be gone — nothing to do, the tab is closing anyway.
   }

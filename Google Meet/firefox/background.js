@@ -198,6 +198,7 @@ api.runtime.onMessage.addListener((message, sender) => {
       cameraOn: message.cameraOn,
       handRaised: message.handRaised,
       captionsOn: message.captionsOn,
+      sharing: message.sharing,
     });
   }
 });
